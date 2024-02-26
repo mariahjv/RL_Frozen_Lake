@@ -1,3 +1,4 @@
+import pickle
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,17 +7,23 @@ import matplotlib.pyplot as plt
 
 def main(num_episodes):
     # Initialize FrozenLake environment with the default 4x4 map
-    environment = gym.make('FrozenLake-v1', map_name="4x4", render_mode="False", is_slippery="False")
-    # initialize q-learning table(4x4)
-    Q = np.zeros((environment.observation_space.n, environment.action_space.n)) 
+    environment = gym.make('FrozenLake-v1', map_name="4x4", render_mode="human", is_slippery=False)
+    
     # discount factor
     gamma = 0.9 
     # learning rate   
     alpha = 0.1 
     # exploration rate  
-    epsilon = 0.5  
+    epsilon = 0.1  
     random_num = np.random.default_rng()
     episode_rewards = np.zeros(num_episodes)
+
+    filename = "q_table.npy"
+    try:
+        if filename is not None:
+            Q = np.load(filename)
+    except FileNotFoundError:
+        Q = np.zeros((environment.observation_space.n, environment.action_space.n))
 
     print("Start environmant")
     for i in range(num_episodes):
@@ -27,9 +34,6 @@ def main(num_episodes):
         truncated = False
 
         while not terminated and not truncated:
-            # Renders the environment to help visualize what the agent sees
-            environment.render()
-
             if random_num.random() < epsilon:
                 action = environment.action_space.sample()
             else:
@@ -51,9 +55,20 @@ def main(num_episodes):
         
     environment.close()
 
+    total_rewards = np.zeros(num_episodes)
+    for j in range(num_episodes):
+        total_rewards[j] = np.sum(episode_rewards[max(0, j-100) : (j+1)]) 
+    plt.plot(total_rewards)
+    plt.xlabel('Episodes')
+    plt.ylabel('Total Rewards')
+    plt.title('Q-learning on FrozenLake')
+    plt.savefig('FL_Q-learning.png')
+
+    if filename is not None:
+        np.save(filename, Q)
 
 if __name__ == '__main__':
-    main(1500)
+    main(1)
 
 # step through manually
 # while True:
